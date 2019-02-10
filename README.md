@@ -14,6 +14,7 @@ im:history -> required to figure out the last unread message. No personal data /
 bot -> required to have a bot user
 
 ## Starting the app
+After adding a `config.js` (see `config.example.js` for format) with your Slack App Token, just do
 
 	node fourhour.js
 
