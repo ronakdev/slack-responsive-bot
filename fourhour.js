@@ -1,14 +1,20 @@
 const request = require('request')
 const config = require('./config.js')
 const fs = require('fs')
+// const message = require('./message.js')
 
-const maxTime = 4*60*60*1000 // 4 hours
+// constants
+const maxTime = (process.argv.length == 3) ? parseInt(process.argv[2]) : 4*60*60*1000 // 4 hours
 const duration = 30*60*1000 // 30 Minutes
 const jsonLocation = `unreadlogs-${Math.random().toString(36).substring(7)}.json`
 
 console.log(`Saving Data to ${jsonLocation}`)
+
 let logData = {}
 
+/**
+ * Main Function; This looks at each im and logs if neeeded
+ */
 function cycle() {
 	// get all ims to look at
 	getIMList().then((imChannelIds) => {
@@ -19,6 +25,11 @@ function cycle() {
 	})
 }
 
+/**
+ * Logs if there hasn't been a response in 4 hours
+ * 
+ * @param {string} imId The id of the IM Channel
+ */
 async function log(imId) {
 	request(`https://slack.com/api/conversations.info?token=${config.token}&channel=${imId}&pretty=1`,
 	async (err, response, body) => {
@@ -41,7 +52,8 @@ async function log(imId) {
 					userId: data.channel.user,
 					lastMessageUser: data.channel.latest.user
 				}
-				
+				// message user
+				message(data.channel.user, `Reply to channel #${data.channel.id}!`, config.token)
 				updateJSON()
 			} else {
 				// ignore this, this shouldn't happen
@@ -51,12 +63,21 @@ async function log(imId) {
 	})
 }
 
+/**
+ * Writes Log Data to a JSON File
+ */
 function updateJSON() {
 	fs.writeFile(jsonLocation, JSON.stringify(logData), (err) => {
 		if (err) console.err(err)
 	})
 }
 
+/**
+ * Gets the message X messages from now in a specific channel
+ * 
+ * @param {string} channel 
+ * @param {number} unreads 
+ */
 function getLatestMessage(channel, unreads) {
 	return new Promise((resolve, reject) => {
 		request(`https://slack.com/api/conversations.history?token=${config.token}&channel=${channel}&limit=${unreads}&pretty=1`,
@@ -71,6 +92,9 @@ function getLatestMessage(channel, unreads) {
 	})
 }
 
+/**
+ * Gets a list of all the IM Conversations
+ */
 function getIMList() {
 	return new Promise((resolve, reject) => {
 		request(`https://slack.com/api/conversations.list?token=${config.token}&types=im&pretty=1`, 
@@ -90,5 +114,8 @@ function getIMList() {
 	})
 }
 
+/**
+ * Start the function
+ */
 cycle()
 setInterval(cycle, duration)
