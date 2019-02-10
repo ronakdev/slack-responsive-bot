@@ -2,7 +2,8 @@ const request = require('request')
 const config = require('./config.js')
 const fs = require('fs')
 
-const duration = 30*60*1000; // 30 Minutes
+const maxTime = 4*60*60*1000 // 4 hours
+const duration = 30*60*1000 // 30 Minutes
 const jsonLocation = `unreadlogs-${Math.random().toString(36).substring(7)}.json`
 
 console.log(`Saving Data to ${jsonLocation}`)
@@ -31,6 +32,7 @@ async function log(imId) {
 				}
 				let msgId = msgData.client_msg_id
 				let time = Date.now()/1000 - parseFloat(msgData.ts)
+				if (time < maxTime) {return}
 				if (!logData[data.channel.id]) {
 					logData[data.channel.id] = {}
 				}
