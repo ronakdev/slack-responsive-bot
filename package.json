@@ -4,11 +4,12 @@
   "description": "Measures responsiveness on slack",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "author": "ronakdev,pathrise",
   "license": "ISC",
   "dependencies": {
+    "csvtojson": "^2.0.8",
     "request": "^2.88.0",
     "wait.for-es6": "^0.1.0"
   }

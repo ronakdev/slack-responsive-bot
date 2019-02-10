@@ -28,8 +28,7 @@ function logUnreads(imId, csvPath) {
 	(err, response, body) => {
 		if (!err, response.statusCode == "200") {
 			let data = JSON.parse(response.body)
-			console.log(data.channel.unread_count)
-			fs.appendFile(csvPath, `${data.channel.user},${data.channel.unread_count},${new Date()}\n`, function (err) {
+			fs.appendFile(csvPath, `${data.channel.user},${data.channel.id},${data.channel.unread_count},${new Date()}\n`, function (err) {
 				if (err) throw err;
 			});
 		}
@@ -39,12 +38,12 @@ function logUnreads(imId, csvPath) {
 function cycle() {
 	getIMList().then((imIds) => {
 		for (let index in imIds) {
-			logUnreads(imIds[index], "unreads.csv")
+			logUnreads(imIds[index], "data.csv")
 		}
 	}).catch((err) => {
 		console.log(err)
 	})
 }
 
-setTimeout(cycle, 10*minutes)
+setInterval(cycle, 1*minutes)
 
