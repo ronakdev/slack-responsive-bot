@@ -1,10 +1,11 @@
 const request = require('request')
 const config = require('./config.js')
 const fs = require('fs')
-// const message = require('./message.js')
+const message = require('./message.js')
 
 // constants
 const maxTime = (process.argv.length == 3) ? parseInt(process.argv[2]) : 4*60*60*1000 // 4 hours
+// Made it allow cmdline args so I could experiment
 const duration = 30*60*1000 // 30 Minutes
 const jsonLocation = `unreadlogs-${Math.random().toString(36).substring(7)}.json`
 
@@ -17,6 +18,7 @@ let logData = {}
  */
 function cycle() {
 	// get all ims to look at
+	console.log(`Cycling @ ${new Date()}`)
 	getIMList().then((imChannelIds) => {
 		for (let index in imChannelIds) {
 			let id = imChannelIds[index]
@@ -34,27 +36,37 @@ async function log(imId) {
 	request(`https://slack.com/api/conversations.info?token=${config.token}&channel=${imId}&pretty=1`,
 	async (err, response, body) => {
 		if (!err, response.statusCode == "200") {
+			console.log(`Checking out ${imId}`)
 			let data = JSON.parse(response.body)
 			if (data.channel.latest) {
 				let msgData = data.channel.latest
-				/* TODO: Get Proper Msg Id If Unreads Are Not 1 */
+
+				console.log(`Data: Unreads: ${data.channel.unread_count}`)
 				if (data.channel.unread_count > 1) {
 					msgData = await getLatestMessage(data.channel.id, data.channel.unread_count)
 				}
 				let msgId = msgData.client_msg_id
 				let time = Date.now()/1000 - parseFloat(msgData.ts)
+				console.log(`It's been ${time}, maxTime is ${maxTime}`)
 				if (time < maxTime) {return}
+				console.log("past?")
+				let firstPing = false
+				firstPing = (!logData[data.channel.id] || !logData[data.channel.id][msgId])
 				if (!logData[data.channel.id]) {
 					logData[data.channel.id] = {}
 				}
 				logData[data.channel.id][msgId] = {
 					responseTime: time,
 					userId: data.channel.user,
-					lastMessageUser: data.channel.latest.user
+					lastMessageUser: data.channel.latest.user,
+					timeMessageWasSent: msgData.ts
+				}
+				if (firstPing) {
+					logData[data.channel.id][msgId][firstPing] = Date.now() // so we can make our histogram
 				}
 				// message user
-				message(data.channel.user, `Reply to channel #${data.channel.id}!`, config.token)
 				updateJSON()
+				message(data.channel.user, `Reply to channel #${data.channel.id}!`, config.token)
 			} else {
 				// ignore this, this shouldn't happen
 			}
